@@ -1,34 +1,50 @@
+const WHATSAPP_NUMARASI = '905397817070';
+
 // Mobil menü
 const toggle = document.querySelector('.menu-toggle');
-const links = document.querySelector('.nav-links');
-if (toggle && links) {
-  toggle.addEventListener('click', () => {
-    const open = links.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', open);
-  });
-  links.querySelectorAll('a').forEach(a =>
-    a.addEventListener('click', () => links.classList.remove('open'))
-  );
+const menu = document.querySelector('.nav-links');
+if (toggle && menu) {
+  const setOpen = open => {
+    menu.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Menüyü kapat' : 'Menüyü aç');
+  };
+  toggle.addEventListener('click', () => setOpen(!menu.classList.contains('open')));
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setOpen(false)));
 }
 
-// Footer yılı
+// Alt bilgideki yıl
 const year = document.getElementById('year');
 if (year) year.textContent = new Date().getFullYear();
 
-// İletişim formu (şimdilik sadece istemci tarafı doğrulama)
+// Randevu formu: bilgileri WhatsApp mesajı olarak hazırlar
 const form = document.getElementById('contactForm');
 if (form) {
   form.addEventListener('submit', e => {
     e.preventDefault();
+    const f = form.elements;
     const status = form.querySelector('.form-status');
-    if (!form.ad.value.trim() || !form.telefon.value.trim()) {
-      status.textContent = 'Lütfen ad ve telefon alanlarını doldurun.';
-      status.style.color = '#c0392b';
+    const ad = f.ad.value.trim();
+    const telefon = f.telefon.value.trim();
+
+    if (!ad || !telefon) {
+      status.textContent = 'Lütfen adınızı ve telefon numaranızı yazın.';
+      status.className = 'form-status error';
+      (ad ? f.telefon : f.ad).focus();
       return;
     }
-    // TODO: Formu bir backend'e veya form servisine gönderin
-    status.textContent = 'Teşekkürler! En kısa sürede sizinle iletişime geçeceğiz.';
-    status.style.color = '#1f6f78';
+
+    const satirlar = ['Merhaba, randevu almak istiyorum.', `Ad Soyad: ${ad}`, `Telefon: ${telefon}`];
+    if (f.tedavi.value) satirlar.push(`İlgilendiğim tedavi: ${f.tedavi.value}`);
+    if (f.mesaj.value.trim()) satirlar.push(`Mesaj: ${f.mesaj.value.trim()}`);
+
+    const url = `https://wa.me/${WHATSAPP_NUMARASI}?text=${encodeURIComponent(satirlar.join('\n'))}`;
+    const pencere = window.open(url, '_blank');
+    if (pencere) pencere.opener = null;
+    else window.location.href = url; // açılır pencere engellendiyse aynı sekmede aç
+
+    status.textContent = 'WhatsApp açılıyor. Mesajı göndermeyi unutmayın.';
+    status.className = 'form-status ok';
     form.reset();
   });
 }
